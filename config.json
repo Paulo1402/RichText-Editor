@@ -1,7 +1,11 @@
 {
   "language": "English",
-  "height": 0,
-  "width": 0,
-  "x": 0,
-  "y": 0
+  "height": 520,
+  "width": 807,
+  "x": 270,
+  "y": 36,
+  "maximized": false,
+  "toolbar": true,
+  "formatbar": true,
+  "statusbar": true
 }

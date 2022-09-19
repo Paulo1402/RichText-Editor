@@ -1,4 +1,6 @@
 import sys
+import json
+import os
 from ext import *
 from PyQt6 import QtGui, QtCore, QtWidgets, QtPrintSupport
 from PyQt6.QtWidgets import QApplication, QMainWindow, QFileDialog, QToolBar, QStatusBar, QTextEdit
@@ -37,36 +39,66 @@ class Main(QMainWindow):
         self.statusbar_action: QAction | None = None
         self.find_action: QAction | None = None
 
+        self.language = ''
         self.filename = ''
         self.changes_saved = True
 
         self.init_ui()
 
     def init_ui(self):
+        # Cria objeto e seta como widget central
         self.text = QTextEdit(self)
         self.setCentralWidget(self.text)
 
-        self.init_toolbar()
-        self.init_menubar()
-        self.init_formatbar()
-
-        self.setWindowTitle('MonkeyText Editor')
-        self.setWindowIcon(QIcon('icons/icon.png'))
-
-        # Define posição, altura e largura da janela
-        self.setGeometry(100, 100, 1030, 600)
-
-        # inicia uma barra de status para a janela
-        self.statusbar = self.statusBar()
-
         self.text.setTabStopDistance(33)
+
+        # Relaciona eventos do objeto QTextEdit à funções
         self.text.cursorPositionChanged.connect(self.cursor_position)
+        self.text.textChanged.connect(self.changed)
 
         # Precisamos do nosso próprio menu de contexto para tabelas
         self.text.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.text.customContextMenuRequested.connect(self.context)
 
-        self.text.textChanged.connect(self.changed)
+        # inicia uma barra de status para a janela
+        self.statusbar = self.statusBar()
+
+        # Inicia barras e menus
+        self.init_toolbar()
+        self.init_menubar()
+        self.init_formatbar()
+
+        # Seta título e ícone da janela
+        self.setWindowTitle('MonkeyText Editor')
+        self.setWindowIcon(QIcon('icons/icon.png'))
+
+        # Retorna as preferências do usuário
+        data = self.read_json()
+        print(data)
+
+        self.language = data['language']
+
+        height = data['height']
+        width = data['width']
+        x = data['x']
+        y = data['y']
+
+        maximized = data['maximized']
+
+        toolbar = data['toolbar']
+        formatbar = data['formatbar']
+        statusbar = data['statusbar']
+
+        # Define posição, altura e largura da janela
+        self.setGeometry(x, y, width, height)
+
+        if maximized:
+            self.showMaximized()
+
+        # Seta visibilidade
+        self.toolbar.setVisible(toolbar)
+        self.formatbar.setVisible(formatbar)
+        self.statusbar.setVisible(statusbar)
 
     def new(self):
         spawn = Main(self)
@@ -320,7 +352,7 @@ class Main(QMainWindow):
             if image.isNull():
                 popup = QtWidgets.QMessageBox()
                 popup.critical(self, 'Erro ao carregar imagem', 'Não foi possível carregar a '
-                               'imagem!', QtWidgets.QMessageBox.StandardButton.Ok)
+                                                                'imagem!', QtWidgets.QMessageBox.StandardButton.Ok)
             else:
                 cursor = self.text.textCursor()
                 cursor.insertImage(image)
@@ -449,6 +481,8 @@ class Main(QMainWindow):
         self.changes_saved = False
 
     def closeEvent(self, event: QtGui.QCloseEvent):
+        self.write_json()
+
         if self.changes_saved:
             event.accept()
         else:
@@ -481,6 +515,45 @@ class Main(QMainWindow):
                 event.accept()
             else:
                 event.ignore()
+
+    @staticmethod
+    def default_config():
+        default = {
+            "language": "English",
+            "height": 1030,
+            "width": 600,
+            "x": 100,
+            "y": 100,
+            "maximized": False,
+            "toolbar": True,
+            "formatbar": True,
+            "statusbar": True
+        }
+        with open('config.json', 'w') as f:
+            f.write(json.dumps(default, indent=2))
+
+    def write_json(self):
+        config = self.geometry()
+        print(config)
+        data = {'language': self.language,
+                'height': config.height(),
+                'width': config.width(),
+                'x': config.x(),
+                'y': config.y(),
+                'maximized': self.isMaximized(),
+                'toolbar': self.toolbar.isVisible(),
+                'formatbar': self.formatbar.isVisible(),
+                'statusbar': self.statusbar.isVisible()}
+
+        with open('config.json', 'w') as f:
+            f.write(json.dumps(data, indent=2))
+
+    def read_json(self):
+        if not os.path.exists('config.json'):
+            self.default_config()
+
+        with open('config.json', 'r') as f:
+            return json.load(f)
 
     def init_toolbar(self):
         self.new_action = QAction(QIcon('icons/new.png'), 'Novo', self)
