@@ -23,9 +23,10 @@ class Find(QtWidgets.QDialog):
         self.case_sens: QCheckBox | None = None
         self.whole_words: QCheckBox | None = None
 
-        self.text: QTextEdit = parent.text
         self.last_match: re.Match | None = None
         self.last_query: str = ''
+
+        self.parent = parent
 
         self.init_ui()
 
@@ -87,10 +88,16 @@ class Find(QtWidgets.QDialog):
         layout.addWidget(options_label, 6, 0)
         layout.addWidget(self.case_sens, 6, 1)
         layout.addWidget(self.whole_words, 6, 2)
+        
+        # Centralizar dialog box
+        width = 360
+        height = 250
+        x = int(self.parent.width() / 2 - width / 2 + self.parent.x())
+        y = int(self.parent.height() / 2 - height / 2 + self.parent.y())
 
-        self.setGeometry(300, 300, 360, 250)
-        self.setWindowTitle('Procurar e Substituir')
+        self.setGeometry(x, y, width, height)
         self.setLayout(layout)
+        self.setWindowTitle('Procurar e Substituir')
 
         # Por padrão o modo normal é ativado e o campo encontrar recebe o foco
         self.normal_radio.setChecked(True)
@@ -98,7 +105,7 @@ class Find(QtWidgets.QDialog):
 
     def find_(self):
         # Pega o texto do formulário principal
-        text = self.text.toPlainText()
+        text = self.parent.text.toPlainText()
 
         # E o texto para procurar
         query = self.find_field.toPlainText()
@@ -141,11 +148,11 @@ class Find(QtWidgets.QDialog):
             self.move_cursor(start, end)
         else:
             # Seta o cursor para o fim caso a pesquisa não tenha êxito
-            self.text.moveCursor(QtGui.QTextCursor.MoveOperation.End)
+            self.parent.text.moveCursor(QtGui.QTextCursor.MoveOperation.End)
 
     def replace(self):
         # Pega o objeto de cursor de texto
-        cursor = self.text.textCursor()
+        cursor = self.parent.text.textCursor()
 
         # Verifica se a última procura teve êxito e se o cursor está selecionando algo
         if self.last_match and cursor.hasSelection():
@@ -153,7 +160,7 @@ class Find(QtWidgets.QDialog):
             cursor.insertText(self.replace_field.toPlainText())
 
             # E seta o novo cursor
-            self.text.setTextCursor(cursor)
+            self.parent.text.setTextCursor(cursor)
 
     def replace_all(self):
         # Seta last_match como None para que a pesquisa comece no início do documento
@@ -183,7 +190,7 @@ class Find(QtWidgets.QDialog):
 
     def move_cursor(self, start, end):
         # Cria um objeto de cursor a partir do cursor do QText Edit da janela principal
-        cursor = self.text.textCursor()
+        cursor = self.parent.text.textCursor()
 
         # Então é setado a posição para o começo da última correspondência
         cursor.setPosition(start)
@@ -197,4 +204,4 @@ class Find(QtWidgets.QDialog):
         # cursor.mergeCharFormat(fmt)
 
         # Seta o cursor 'artificial' como cursor principal
-        self.text.setTextCursor(cursor)
+        self.parent.text.setTextCursor(cursor)

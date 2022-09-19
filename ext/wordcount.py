@@ -11,7 +11,7 @@ class WordCount(QtWidgets.QDialog):
         self.total_words: QtWidgets.QLabel | None = None
         self.total_symbols: QtWidgets.QLabel | None = None
 
-        self.text: QtWidgets.QTextEdit = parent.text
+        self.parent = parent
 
         self.init_ui()
 
@@ -60,13 +60,19 @@ class WordCount(QtWidgets.QDialog):
         layout.addWidget(total_symbols_label, 6, 0)
         layout.addWidget(self.total_symbols, 6, 1)
 
-        self.setWindowTitle('Contagem')
-        self.setGeometry(300, 300, 150, 200)
+        # Centralizar dialog box
+        width = 150
+        height = 200
+        x = int(self.parent.width() / 2 - width / 2 + self.parent.x())
+        y = int(self.parent.height() / 2 - height / 2 + self.parent.y())
+
+        self.setGeometry(x, y, width, height)
         self.setLayout(layout)
+        self.setWindowTitle('Contagem')
 
     def get_text(self):
         # Pega o texto atual da seleção
-        text = self.text.textCursor().selectedText()
+        text = self.parent.text.textCursor().selectedText()
 
         # Divide o texto para contar as palavras
         words = len(text.split())
@@ -78,7 +84,7 @@ class WordCount(QtWidgets.QDialog):
         self.current_symbols.setText(self.format_number(symbols))
 
         # Para a contagem total, mesma coisa acima, mas para o texto total
-        text = self.text.toPlainText()
+        text = self.parent.text.toPlainText()
 
         words = len(text.split())
         symbols = len(text)

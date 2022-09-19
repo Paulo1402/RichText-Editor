@@ -18,7 +18,7 @@ class Table(QtWidgets.QDialog):
         self.space: QtWidgets.QSpinBox | None = None
         self.pad: QtWidgets.QSpinBox | None = None
 
-        self.text: QtWidgets.QTextEdit = parent.text
+        self.parent = parent
 
         self.init_ui()
 
@@ -61,13 +61,19 @@ class Table(QtWidgets.QDialog):
         layout.addWidget(self.space, 3, 1)
 
         layout.addWidget(insert_button, 4, 0, 1, 2)
+        
+        # Centralizar dialog box
+        width = 200
+        height = 100
+        x = int(self.parent.width() / 2 - width / 2 + self.parent.x())
+        y = int(self.parent.height() / 2 - height / 2 + self.parent.y())
 
-        self.setWindowTitle('Inserir Tabela')
-        self.setGeometry(300, 300, 200, 100)
+        self.setGeometry(x, y, width, height)
         self.setLayout(layout)
+        self.setWindowTitle('Inserir Tabela')
 
     def insert(self):
-        cursor = self.text.textCursor()
+        cursor = self.parent.text.textCursor()
 
         # Pega a configuração
         rows = self.rows.value()

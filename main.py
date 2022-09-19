@@ -60,21 +60,12 @@ class Main(QMainWindow):
         self.text.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.text.customContextMenuRequested.connect(self.context)
 
-        # inicia uma barra de status para a janela
-        self.statusbar = self.statusBar()
-
-        # Inicia barras e menus
-        self.init_toolbar()
-        self.init_menubar()
-        self.init_formatbar()
-
         # Seta título e ícone da janela
         self.setWindowTitle('MonkeyText Editor')
         self.setWindowIcon(QIcon('icons/icon.png'))
 
         # Retorna as preferências do usuário
         data = self.read_json()
-        print(data)
 
         self.language = data['language']
 
@@ -94,6 +85,14 @@ class Main(QMainWindow):
 
         if maximized:
             self.showMaximized()
+
+        # inicia uma barra de status para a janela
+        self.statusbar = self.statusBar()
+
+        # Inicia barras e menus
+        self.init_toolbar()
+        self.init_formatbar()
+        self.init_menubar()
 
         # Seta visibilidade
         self.toolbar.setVisible(toolbar)
@@ -516,34 +515,22 @@ class Main(QMainWindow):
             else:
                 event.ignore()
 
-    @staticmethod
-    def default_config():
-        default = {
-            "language": "English",
-            "height": 1030,
-            "width": 600,
-            "x": 100,
-            "y": 100,
-            "maximized": False,
-            "toolbar": True,
-            "formatbar": True,
-            "statusbar": True
-        }
-        with open('config.json', 'w') as f:
-            f.write(json.dumps(default, indent=2))
-
     def write_json(self):
         config = self.geometry()
-        print(config)
-        data = {'language': self.language,
-                'height': config.height(),
-                'width': config.width(),
-                'x': config.x(),
-                'y': config.y(),
-                'maximized': self.isMaximized(),
-                'toolbar': self.toolbar.isVisible(),
-                'formatbar': self.formatbar.isVisible(),
-                'statusbar': self.statusbar.isVisible()}
+
+        data = {
+            'language': self.language,
+
+            'width': config.width(),
+            'height': config.height(),
+            'x': config.x(),
+            'y': config.y(),
+            'maximized': self.isMaximized(),
+
+            'toolbar': self.toolbar.isVisible(),
+            'formatbar': self.formatbar.isVisible(),
+            'statusbar': self.statusbar.isVisible()
+        }
 
         with open('config.json', 'w') as f:
             f.write(json.dumps(data, indent=2))
@@ -554,6 +541,25 @@ class Main(QMainWindow):
 
         with open('config.json', 'r') as f:
             return json.load(f)
+
+    @staticmethod
+    def default_config():
+        default = {
+            'language': 'English',
+
+            'width': 600,
+            'height': 1030,
+            'x': 100,
+            'y': 100,
+
+            'maximized': False,
+            'toolbar': True,
+            'formatbar': True,
+            'statusbar': True
+        }
+
+        with open('config.json', 'w') as f:
+            f.write(json.dumps(default, indent=2))
 
     def init_toolbar(self):
         self.new_action = QAction(QIcon('icons/new.png'), 'Novo', self)

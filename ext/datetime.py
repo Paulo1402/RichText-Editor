@@ -15,7 +15,7 @@ class DateTime(QtWidgets.QDialog):
 
         self.box: QtWidgets.QComboBox | None = None
 
-        self.text: QtWidgets.QTextEdit = parent.text
+        self.parent = parent
 
         self.formats = ['%A, %d. %B %Y %H:%M',
                         '%A, %d. %B %Y',
@@ -48,13 +48,19 @@ class DateTime(QtWidgets.QDialog):
         layout.addWidget(insert, 1, 0)
         layout.addWidget(cancel, 1, 1)
 
-        self.setGeometry(300, 300, 400, 80)
-        self.setWindowTitle('Data e Hora')
+        # Centralizar dialog box
+        width = 360
+        height = 250
+        x = int(self.parent.width() / 2 - width / 2 + self.parent.x())
+        y = int(self.parent.height() / 2 - height / 2 + self.parent.y())
+
+        self.setGeometry(x, y, width, height)
         self.setLayout(layout)
+        self.setWindowTitle('Data e Hora')
 
     def insert(self):
         # Pega o cursor
-        cursor = self.text.textCursor()
+        cursor = self.parent.text.textCursor()
 
         # Pega o atual padrão escolhido na combobox pelo seu índice
         datetime = strftime(self.formats[self.box.currentIndex()])
