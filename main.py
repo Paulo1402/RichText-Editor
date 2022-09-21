@@ -21,7 +21,6 @@ class Main(QMainWindow):
         self.formatbar: QToolBar | None = None
 
         self.statusbar: QStatusBar | None = None
-
         self.text: QTextEdit | None = None
 
         self.new_action: QAction | None = None
