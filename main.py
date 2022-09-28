@@ -1,16 +1,12 @@
 import sys
 import json
 import os
+from os.path import join
 from ext import *
 from PyQt6 import QtGui, QtCore, QtWidgets, QtPrintSupport
 from PyQt6.QtWidgets import QApplication, QMainWindow, QFileDialog, QToolBar, QStatusBar, QTextEdit
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QAction, QIcon
-
-
-def exception_hook(exctype, value, traceback):
-    sys.__excepthook__(exctype, value, traceback)
-    sys.exit(1)
 
 
 class Main(QMainWindow):
@@ -38,6 +34,9 @@ class Main(QMainWindow):
         self.statusbar_action: QAction | None = None
         self.find_action: QAction | None = None
 
+        # Pega a raiz da aplicação
+        self.root = os.path.dirname(__file__)
+
         self.language = ''
         self.filename = ''
         self.changes_saved = True
@@ -45,11 +44,15 @@ class Main(QMainWindow):
         self.init_ui()
 
     def init_ui(self):
-        # Cria objeto e seta como widget central
+        # Cria a caixa de texto principal e seta como widget central
         self.text = QTextEdit(self)
         self.setCentralWidget(self.text)
 
         self.text.setTabStopDistance(33)
+
+        # Tenta abrir um documento, caso o aplicativo tenha recebido um argumento
+        if len(sys.argv) > 1:
+            self.open_with(sys.argv[1])
 
         # Relaciona eventos do objeto QTextEdit à funções
         self.text.cursorPositionChanged.connect(self.cursor_position)
@@ -61,7 +64,7 @@ class Main(QMainWindow):
 
         # Seta título e ícone da janela
         self.setWindowTitle('MonkeyText Editor')
-        self.setWindowIcon(QIcon('icons/icon.png'))
+        self.setWindowIcon(QIcon(join(self.root, 'icons/icon.png')))
 
         # Retorna as preferências do usuário
         data = self.read_json()
@@ -103,10 +106,17 @@ class Main(QMainWindow):
         spawn.show()
 
     def open(self):
-        # Pega o nome do arquivo e mostra apenas arquivos .writer
-        self.filename = QFileDialog.getOpenFileName(self, 'Abrir arquivo', '.', '(*.writer)')[0]
+        # Pega o nome do arquivo e mostra apenas arquivos .writer e .txt
+        self.filename = QFileDialog.getOpenFileName(self, 'Abrir arquivo', '.', '(*.writer, *.txt)')[0]
 
         if self.filename:
+            with open(self.filename, 'rt') as file:
+                self.text.setText(file.read())
+
+    def open_with(self, path: str):
+        if path.endswith('.writer') or path.endswith('.txt'):
+            self.filename = path
+
             with open(self.filename, 'rt') as file:
                 self.text.setText(file.read())
 
@@ -531,18 +541,17 @@ class Main(QMainWindow):
             'statusbar': self.statusbar.isVisible()
         }
 
-        with open('config.json', 'w') as f:
+        with open(join(self.root, 'config.json'), 'w') as f:
             f.write(json.dumps(data, indent=2))
 
     def read_json(self):
-        if not os.path.exists('config.json'):
+        if not os.path.exists(join(self.root, 'config.json')):
             self.default_config()
 
-        with open('config.json', 'r') as f:
+        with open(join(self.root, 'config.json'), 'r') as f:
             return json.load(f)
 
-    @staticmethod
-    def default_config():
+    def default_config(self):
         default = {
             'language': 'English',
 
@@ -557,92 +566,95 @@ class Main(QMainWindow):
             'statusbar': True
         }
 
-        with open('config.json', 'w') as f:
+        with open(join(self.root, 'config.json'), 'w') as f:
             f.write(json.dumps(default, indent=2))
 
     def init_toolbar(self):
-        self.new_action = QAction(QIcon('icons/new.png'), 'Novo', self)
+        self.new_action = QAction(QIcon(join(self.root, 'icons/new.png')), 'Novo', self)
         self.new_action.setStatusTip('Cria um novo documento em branco. Ctrl+N')
         self.new_action.setShortcut('Ctrl+N')
         self.new_action.triggered.connect(self.new)
 
-        self.open_action = QAction(QIcon('icons/open.png'), 'Abrir documento', self)
+        self.open_action = QAction(QIcon(join(self.root, 'icons/open.png')), 'Abrir documento', self)
         self.open_action.setStatusTip('Abre um documento existente. Ctrl+O')
         self.open_action.setShortcut('Ctrl+O')
         self.open_action.triggered.connect(self.open)
 
-        self.save_action = QAction(QIcon('icons/save.png'), 'Salvar', self)
+        self.save_action = QAction(QIcon(join(self.root, 'icons/save.png')), 'Salvar', self)
         self.save_action.setStatusTip('Salva o atual documento. Ctrl+S')
         self.save_action.setShortcut('Ctrl+S')
         self.save_action.triggered.connect(self.save)
 
-        self.print_action = QAction(QIcon('icons/print.png'), 'Imprimir', self)
+        self.print_action = QAction(QIcon(join(self.root, 'icons/print.png')), 'Imprimir', self)
         self.print_action.setStatusTip('Imprimir documento. Ctrl+P')
         self.print_action.setShortcut('Ctrl+P')
         self.print_action.triggered.connect(self.print)
 
-        self.preview_action = QAction(QIcon('icons/preview.png'), 'Ver página', self)
+        self.preview_action = QAction(QIcon(join(self.root, 'icons/preview.png')), 'Ver página', self)
         self.preview_action.setStatusTip('Ver página antes de imprimir. Ctrl+Shift+P')
         self.preview_action.setShortcut('Ctrl+Shift+P')
         self.preview_action.triggered.connect(self.preview)
 
-        self.cut_action = QAction(QIcon('icons/cut.png'), 'Recortar para a área de transferência', self)
+        self.cut_action = QAction(QIcon(join(self.root, 'icons/cut.png')),
+                                  'Recortar para a área de transferência', self)
         self.cut_action.setStatusTip('Deleta e copia o texto para a área de transferência. Ctrl+X')
         self.cut_action.setShortcut('Ctrl+X')
         self.cut_action.triggered.connect(self.text.cut)
 
-        self.copy_action = QAction(QIcon('icons/copy.png'), 'Copiar para a área de transferência', self)
+        self.copy_action = QAction(QIcon(join(self.root, 'icons/copy.png')),
+                                   'Copiar para a área de transferência', self)
         self.copy_action.setStatusTip('Copia o texto para a área de transferência. Ctrl+C')
         self.copy_action.setShortcut('Ctrl+C')
         self.copy_action.triggered.connect(self.text.copy)
 
-        self.paste_action = QAction(QIcon('icons/paste.png'), 'Cola da área de transferência', self)
+        self.paste_action = QAction(QIcon(join(self.root, 'icons/paste.png')), 'Cola da área de transferência', self)
         self.paste_action.setStatusTip('Cola texto da área de transferência. Ctrl+V')
         self.paste_action.setShortcut('Ctrl+V')
         self.paste_action.triggered.connect(self.text.paste)
 
-        self.undo_action = QAction(QIcon('icons/undo.png'), 'Desfaz a última ação', self)
+        self.undo_action = QAction(QIcon(join(self.root, 'icons/undo.png')), 'Desfaz a última ação', self)
         self.undo_action.setStatusTip('Desfaz a última ação. Ctrl+Z')
         self.undo_action.setShortcut('Ctrl+Z')
         self.undo_action.triggered.connect(self.text.undo)
 
-        self.redo_action = QAction(QIcon('icons/redo.png'), 'Refaz a última ação desfeita', self)
+        self.redo_action = QAction(QIcon(join(self.root, 'icons/redo.png')), 'Refaz a última ação desfeita', self)
         self.redo_action.setStatusTip('Refaz a última ação desfeita. Ctrl+Y')
         self.redo_action.setShortcut('Ctrl+Y')
         self.redo_action.triggered.connect(self.text.redo)
 
         # Não há a necessidade de declarar como membro da classe uma vez que essas duas ações só serão usadas aqui
-        bulleted_action = QAction(QIcon('icons/bullet.png'), 'Inserir uma lista com marcadores', self)
+        bulleted_action = QAction(QIcon(join(self.root, 'icons/bullet.png')), 'Inserir uma lista com marcadores', self)
         bulleted_action.setStatusTip('Insere uma lista com marcadores. Ctrl+Shift+B')
         bulleted_action.setShortcut('Ctrl+Shift+B')
         bulleted_action.triggered.connect(self.bulleted_list)
 
-        numbered_action = QAction(QIcon('icons/number.png'), 'Inserir uma lista numerada', self)
+        numbered_action = QAction(QIcon(join(self.root, 'icons/number.png')), 'Inserir uma lista numerada', self)
         numbered_action.setStatusTip('Insere uma lista numerada. Ctrl+Shift+L')
         numbered_action.setShortcut('Ctrl+Shift+L')
         numbered_action.triggered.connect(self.numbered_list)
 
-        self.find_action = QAction(QIcon('icons/find.png'), 'Procurar e substituir', self)
+        self.find_action = QAction(QIcon(join(self.root, 'icons/find.png')), 'Procurar e substituir', self)
         self.find_action.setStatusTip('Procure e substitua palavras no seu documento. Ctrl+F')
         self.find_action.setShortcut('Ctrl+F')
         self.find_action.triggered.connect(find.Find(self).show)
 
-        image_action = QAction(QIcon('icons/image.png'), 'Inserir uma imagem', self)
+        image_action = QAction(QIcon(join(self.root, 'icons/image.png')), 'Inserir uma imagem', self)
         image_action.setStatusTip('Inserir uma imagem. Ctrl+Shift+I')
         image_action.setShortcut('Ctrl+Shift+I')
         image_action.triggered.connect(self.insert_image)
 
-        word_count_action = QAction(QIcon('icons/count.png'), 'Ver contagem de palavras e símbolos', self)
+        word_count_action = QAction(QIcon(join(self.root, 'icons/count.png')),
+                                    'Ver contagem de palavras e símbolos', self)
         word_count_action.setStatusTip('Ver contagem de palavras e símbolos. Ctrl+W')
         word_count_action.setShortcut('Ctrl+W')
         word_count_action.triggered.connect(self.word_count)
 
-        datetime_action = QAction(QIcon('icons/calender.png'), 'Inserir data e hora atual', self)
+        datetime_action = QAction(QIcon(join(self.root, 'icons/calender.png')), 'Inserir data e hora atual', self)
         datetime_action.setStatusTip('Inserir data e hora atual. Ctrl+D')
         datetime_action.setShortcut('Ctrl+D')
         datetime_action.triggered.connect(datetime.DateTime(self).show)
 
-        table_action = QAction(QIcon('icons/table.png'), 'Inserir tabela', self)
+        table_action = QAction(QIcon(join(self.root, 'icons/table.png')), 'Inserir tabela', self)
         table_action.setStatusTip('Inserir tabela. Ctrl+T')
         table_action.setShortcut('Ctrl+T')
         table_action.triggered.connect(table.Table(self).show)
@@ -707,60 +719,60 @@ class Main(QMainWindow):
 
         font_size.addItems(font_sizes)
 
-        font_color = QAction(QIcon('icons/font-color.png'), 'Alterar a cor da fonte', self)
+        font_color = QAction(QIcon(join(self.root, 'icons/font-color.png')), 'Alterar a cor da fonte', self)
         font_color.setStatusTip('Alterar a cor da fonte.')
         font_color.triggered.connect(self.font_color)
 
-        backcolor = QAction(QIcon('icons/highlight.png'), 'Alterar a cor de fundo da fonte', self)
+        backcolor = QAction(QIcon(join(self.root, 'icons/highlight.png')), 'Alterar a cor de fundo da fonte', self)
         backcolor.setStatusTip('Alterar a cor de fundo da fonte.')
         backcolor.triggered.connect(self.highlight)
 
-        bold_action = QAction(QIcon('icons/bold.png'), 'Negrito', self)
+        bold_action = QAction(QIcon(join(self.root, 'icons/bold.png')), 'Negrito', self)
         bold_action.setStatusTip('Inserir negrito.')
         bold_action.triggered.connect(self.bold)
 
-        italic_action = QAction(QIcon('icons/italic.png'), 'Itálico', self)
+        italic_action = QAction(QIcon(join(self.root, 'icons/italic.png')), 'Itálico', self)
         italic_action.setStatusTip('Inserir itálico.')
         italic_action.triggered.connect(self.italic)
 
-        under_action = QAction(QIcon('icons/underline.png'), 'Sublinhado', self)
+        under_action = QAction(QIcon(join(self.root, 'icons/underline.png')), 'Sublinhado', self)
         under_action.setStatusTip('Inserir sublinhado.')
         under_action.triggered.connect(self.underline)
 
-        strike_action = QAction(QIcon('icons/strike.png'), 'Riscado', self)
+        strike_action = QAction(QIcon(join(self.root, 'icons/strike.png')), 'Riscado', self)
         strike_action.setStatusTip('Inserir riscado.')
         strike_action.triggered.connect(self.strike)
 
-        super_action = QAction(QIcon('icons/superscript.png'), 'Sobrescrito', self)
+        super_action = QAction(QIcon(join(self.root, 'icons/superscript.png')), 'Sobrescrito', self)
         super_action.setStatusTip('Inserir sobrescrito.')
         super_action.triggered.connect(self.super_script)
 
-        sub_action = QAction(QIcon('icons/subscript.png'), 'Subscrito', self)
+        sub_action = QAction(QIcon(join(self.root, 'icons/subscript.png')), 'Subscrito', self)
         sub_action.setStatusTip('Inserir subscrito.')
         sub_action.triggered.connect(self.sub_script)
 
-        align_left = QAction(QIcon('icons/align-left.png'), 'Alinhar à esquerda', self)
+        align_left = QAction(QIcon(join(self.root, 'icons/align-left.png')), 'Alinhar à esquerda', self)
         align_left.setStatusTip('Alinhar à esquerda.')
         align_left.triggered.connect(self.align_left)
 
-        align_center = QAction(QIcon('icons/align-center.png'), 'Alinhar ao centro', self)
+        align_center = QAction(QIcon(join(self.root, 'icons/align-center.png')), 'Alinhar ao centro', self)
         align_center.setStatusTip('Alinhar ao centro.')
         align_center.triggered.connect(self.align_center)
 
-        align_right = QAction(QIcon('icons/align-right.png'), 'Alinhar à direita', self)
+        align_right = QAction(QIcon(join(self.root, 'icons/align-right.png')), 'Alinhar à direita', self)
         align_right.setStatusTip('Alinhar à direita.')
         align_right.triggered.connect(self.align_right)
 
-        align_justify = QAction(QIcon('icons/align-justify.png'), 'Alinhar justificado', self)
+        align_justify = QAction(QIcon(join(self.root, 'icons/align-justify.png')), 'Alinhar justificado', self)
         align_justify.setStatusTip('Alinhar justificado.')
         align_justify.triggered.connect(self.align_justify)
 
-        indent_action = QAction(QIcon('icons/indent.png'), 'Recuar', self)
+        indent_action = QAction(QIcon(join(self.root, 'icons/indent.png')), 'Recuar', self)
         indent_action.setStatusTip('Recuar. Ctrl+Tab')
         indent_action.setShortcut('Ctrl+Tab')
         indent_action.triggered.connect(self.indent)
 
-        dedent_action = QAction(QIcon('icons/dedent.png'), 'Desfazer recuo', self)
+        dedent_action = QAction(QIcon(join(self.root, 'icons/dedent.png')), 'Desfazer recuo', self)
         dedent_action.setStatusTip('Desfazer recuo. Shift+Tab')
         dedent_action.setShortcut('Shift+Tab')
         dedent_action.triggered.connect(self.dedent)
@@ -834,6 +846,12 @@ class Main(QMainWindow):
         view.addAction(self.toolbar_action)
         view.addAction(self.formatbar_action)
         view.addAction(self.statusbar_action)
+
+
+# Para ajudar na depuração
+def exception_hook(exctype, value, traceback):
+    sys.__excepthook__(exctype, value, traceback)
+    sys.exit(1)
 
 
 if __name__ == '__main__':
