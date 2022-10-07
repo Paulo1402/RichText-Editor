@@ -63,7 +63,7 @@ class Main(QMainWindow):
         self.text.customContextMenuRequested.connect(self.context)
 
         # Seta título e ícone da janela
-        self.setWindowTitle('MonkeyText Editor')
+        self.setWindowTitle('RichText Editor')
         self.setWindowIcon(QIcon(join(self.root, 'icons/icon.png')))
 
         # Retorna as preferências do usuário
@@ -100,10 +100,6 @@ class Main(QMainWindow):
         self.toolbar.setVisible(toolbar)
         self.formatbar.setVisible(formatbar)
         self.statusbar.setVisible(statusbar)
-
-    def new(self):
-        spawn = Main(self)
-        spawn.show()
 
     def open(self):
         # Pega o nome do arquivo e mostra apenas arquivos .writer e .txt
@@ -573,7 +569,7 @@ class Main(QMainWindow):
         self.new_action = QAction(QIcon(join(self.root, 'icons/new.png')), 'Novo', self)
         self.new_action.setStatusTip('Cria um novo documento em branco. Ctrl+N')
         self.new_action.setShortcut('Ctrl+N')
-        self.new_action.triggered.connect(self.new)
+        self.new_action.triggered.connect(lambda: os.startfile(sys.argv[0]))
 
         self.open_action = QAction(QIcon(join(self.root, 'icons/open.png')), 'Abrir documento', self)
         self.open_action.setStatusTip('Abre um documento existente. Ctrl+O')
