@@ -487,9 +487,7 @@ class Main(QMainWindow):
     def closeEvent(self, event: QtGui.QCloseEvent):
         self.write_json()
 
-        if self.changes_saved:
-            event.accept()
-        else:
+        if not self.changes_saved:
             # Seta botões à variáveis
             save = QtWidgets.QMessageBox.StandardButton.Save
             cancel = QtWidgets.QMessageBox.StandardButton.Cancel
@@ -515,9 +513,7 @@ class Main(QMainWindow):
 
             if answer == save:
                 self.save()
-            elif answer == discard:
-                event.accept()
-            else:
+            elif answer == cancel:
                 event.ignore()
 
     def write_json(self):
